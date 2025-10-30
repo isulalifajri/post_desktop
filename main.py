@@ -1,6 +1,9 @@
 # main.py
 import sys
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
+from app.database.db import init_db
+
+init_db()
 
 # 1. Buat aplikasi utama
 app = QApplication(sys.argv)

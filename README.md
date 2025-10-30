@@ -49,7 +49,7 @@ sys.exit(app.exec())
 ```
 
 kemudian jalankan perintah: `python main.py`
-jika muncul jendela window berarti berhasil
+jika muncul jendela window(GUI) berarti berhasil
 
 
 
