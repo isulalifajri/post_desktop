@@ -1,26 +1,12 @@
-# main.py
-import sys
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QApplication
+from app.ui.main_window import MainWindow
 from app.database.db import init_db
+import sys
 
-init_db()
+if __name__ == "__main__":
+    init_db()
 
-# 1. Buat aplikasi utama
-app = QApplication(sys.argv)
-
-# 2. Buat jendela (window)
-window = QWidget()
-window.setWindowTitle("POS Desktop - Test")
-window.setGeometry(300, 200, 400, 200)
-
-# 3. Tambahkan teks sederhana
-layout = QVBoxLayout()
-label = QLabel("Hello, POS Desktop pertama kamu!")
-layout.addWidget(label)
-window.setLayout(layout)
-
-# 4. Tampilkan jendela
-window.show()
-
-# 5. Jalankan event loop
-sys.exit(app.exec())
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
