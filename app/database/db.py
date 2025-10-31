@@ -94,6 +94,9 @@ def get_all_products():
     conn.close()
     return [{"id": r[0], "name": r[1], "price": r[2], "stock": r[3]} for r in rows]
 
+# =====================================================
+# 📈 Statistik untuk Dashboard
+# =====================================================
 def get_dashboard_stats():
     conn = get_connection()
     cursor = conn.cursor()
@@ -103,9 +106,21 @@ def get_dashboard_stats():
     total_products = cursor.fetchone()[0]
 
     # Transaksi hari ini
-    today = datetime.now().strftime("%Y-%m-%d")
-    cursor.execute("SELECT COUNT(*), COALESCE(SUM(total), 0) FROM sales WHERE sale_date = ?", (today,))
-    sales_today, revenue_today = cursor.fetchone()
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM sales
+        WHERE DATE(sale_date) = DATE('now', 'localtime')
+    """)
+    sales_today = cursor.fetchone()[0]
+
+    # Total pendapatan hari ini
+    cursor.execute("""
+        SELECT IFNULL(SUM(si.qty * si.price), 0)
+        FROM sales s
+        JOIN sales_items si ON s.id = si.sale_id
+        WHERE DATE(s.sale_date) = DATE('now', 'localtime')
+    """)
+    revenue_today = cursor.fetchone()[0]
 
     conn.close()
     return {
@@ -114,33 +129,26 @@ def get_dashboard_stats():
         "revenue_today": revenue_today
     }
 
-# ==========================================================
-# Fungsi ini untuk chart pendapatan 3 bulan terakhir
-# ==========================================================
+
+# =====================================================
+# 📊 Pendapatan 3 Bulan Terakhir
+# =====================================================
 def get_last_3_months_revenue():
     conn = get_connection()
     cursor = conn.cursor()
 
-    data = []
-    today = datetime.now()
-
-    # Ambil 3 bulan terakhir sebelum bulan ini
-    for i in range(3, 0, -1):
-        # Dapatkan awal bulan i bulan lalu
-        month_date = today.replace(day=1) - timedelta(days=30 * i)
-        year_month = month_date.strftime("%Y-%m")
-
-        cursor.execute("""
-            SELECT COALESCE(SUM(total), 0)
-            FROM sales
-            WHERE strftime('%Y-%m', sale_date) = ?
-        """, (year_month,))
-
-        total = cursor.fetchone()[0]
-        data.append({
-            "month": month_date.strftime("%B"),  # contoh: "Juli"
-            "revenue": total
-        })
-
+    cursor.execute("""
+        SELECT 
+            strftime('%Y-%m', s.sale_date) AS month,
+            SUM(si.qty * si.price) AS total
+        FROM sales s
+        JOIN sales_items si ON s.id = si.sale_id
+        WHERE s.sale_date >= DATE('now', '-3 months')
+        GROUP BY month
+        ORDER BY month
+    """)
+    data = cursor.fetchall()
     conn.close()
-    return data
+
+    formatted = [(month, total or 0) for month, total in data]
+    return formatted

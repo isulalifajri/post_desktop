@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame,
+    QScrollArea, QSizePolicy
 )
 from PyQt6.QtCore import Qt, QTimer
 from datetime import datetime
@@ -14,7 +15,7 @@ from app.database.db import get_dashboard_stats
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("💼 POS Desktop")
+        self.setWindowTitle(f"💼 POS Desktop with Python {sys.version.split()[0]}")
         self.setGeometry(300, 200, 720, 480)
         self.setStyleSheet("""
             QWidget {
@@ -25,13 +26,18 @@ class MainWindow(QMainWindow):
         self.timer = None
         self.show_dashboard()
 
+    # ==========================================================
+    # 🏠 DASHBOARD
+    # ==========================================================
     def show_dashboard(self):
-        """Tampilan dashboard utama"""
         if self.timer:
             self.timer.stop()
 
-        central_widget = QWidget()
-        layout = QVBoxLayout()
+        # --- Scroll Area utama agar bisa di-scroll ---
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area_widget = QWidget()
+        layout = QVBoxLayout(scroll_area_widget)
         layout.setSpacing(20)
         layout.setContentsMargins(30, 30, 30, 30)
 
@@ -52,32 +58,7 @@ class MainWindow(QMainWindow):
         self.timer.start(1000)
         self.update_clock()
 
-        # 📈 Chart Pendapatan 3 Bulan Terakhir
-        self.show_recent_revenue_chart(layout)
-
-        # 📊 Statistik Ringkas
-        self.stats_layout = QHBoxLayout()
-        self.update_stats_cards()
-        layout.addLayout(self.stats_layout)
-
-        # 🔁 Tombol Refresh
-        btn_refresh = QPushButton("🔄 Refresh Data")
-        btn_refresh.setFixedHeight(38)
-        btn_refresh.clicked.connect(self.update_stats_cards)
-        btn_refresh.setStyleSheet("""
-            QPushButton {
-                background-color: #10b981;
-                color: white;
-                font-weight: bold;
-                border-radius: 10px;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
-        layout.addWidget(btn_refresh)
-
-        # 🧭 Menu Navigasi
+                # 🧭 Menu Navigasi
         menu_layout = QHBoxLayout()
         menu_layout.setSpacing(15)
         buttons = [
@@ -108,7 +89,32 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(menu_layout)
 
-        # 🦶 FOOTER
+        # 📈 Chart Pendapatan 3 Bulan Terakhir
+        self.show_recent_revenue_chart(layout)
+
+        # 📊 Statistik Ringkas
+        self.stats_layout = QHBoxLayout()
+        self.update_stats_cards()
+        layout.addLayout(self.stats_layout)
+
+        # 🔁 Tombol Refresh
+        btn_refresh = QPushButton("🔄 Refresh Data")
+        btn_refresh.setFixedHeight(38)
+        btn_refresh.clicked.connect(self.update_stats_cards)
+        btn_refresh.setStyleSheet("""
+            QPushButton {
+                background-color: #10b981;
+                color: white;
+                font-weight: bold;
+                border-radius: 10px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+        """)
+        layout.addWidget(btn_refresh)
+
+        # FOOTER
         footer = QLabel(f"Built with Python {sys.version.split()[0]}  •  POS Desktop")
         footer.setStyleSheet("""
             color: #9ca3af;
@@ -120,40 +126,74 @@ class MainWindow(QMainWindow):
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(footer)
 
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
+        # Set layout ke scroll area
+        scroll_area.setWidget(scroll_area_widget)
+        self.setCentralWidget(scroll_area)
 
     # ==========================================================
     # 📊 Chart Pendapatan 3 Bulan Terakhir
     # ==========================================================
     def show_recent_revenue_chart(self, layout):
-        import matplotlib
-        matplotlib.use('Agg')
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        import matplotlib.pyplot as plt
+        from matplotlib.figure import Figure
         from app.database.db import get_last_3_months_revenue
 
         data = get_last_3_months_revenue()
         if not data:
             chart_label = QLabel("📉 Belum ada data pendapatan 3 bulan terakhir.")
-            chart_label.setStyleSheet("color: #6b7280; font-size: 13px;")
+            chart_label.setStyleSheet("color: #6b7280; font-size: 13px; margin-top: 10px;")
             layout.addWidget(chart_label)
             return
 
         months = [m for m, _ in data]
         totals = [t for _, t in data]
 
-        fig, ax = plt.subplots(figsize=(5.5, 3))
-        bars = ax.bar(months, totals, color="#4ade80")
+        fig = Figure(figsize=(8, 3.5), tight_layout=True)
+        ax = fig.add_subplot(111)
 
-        ax.set_title("Pendapatan 3 Bulan Terakhir", fontsize=11, pad=10)
-        ax.set_ylabel("Total Pendapatan (Rp)")
-        ax.tick_params(axis='x', rotation=45)
-        ax.grid(axis='y', linestyle='--', alpha=0.4)
+        purple = "#8b5cf6"
+        purple_dark = "#7c3aed"
 
-        fig.tight_layout()
+        bars = ax.bar(months, totals, color=purple, edgecolor=purple_dark, width=0.55)
+
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    height + (height * 0.05),
+                    f"Rp {int(height):,}".replace(",", "."),
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    color="#1f2937",
+                    fontweight="bold"
+                )
+
+        # Title chart
+        ax.set_title("Pendapatan 3 Bulan Terakhir", fontsize=12, fontweight="bold", pad=12)
+
+        ax.set_ylabel("Total Pendapatan (Rp)", fontsize=10, color='#4b5563')
+        ax.tick_params(axis="x", labelsize=10, pad=6)
+        ax.grid(axis="y", linestyle="--", alpha=0.35)
+
+        # Bersihin border biar clean modern
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+
         canvas = FigureCanvas(fig)
+
+        # ✅ PERBAIKI HEIGHT CANVAS BIAR GA GEPENG
+        canvas.setMinimumHeight(260)
+        canvas.setMaximumHeight(260)
+
+        # Biar dia expand horizontal, tapi fix tinggi
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        canvas.updateGeometry()
+
         layout.addWidget(canvas)
+
+
 
     # ==========================================================
     # 🕒 Update waktu real-time
@@ -179,7 +219,7 @@ class MainWindow(QMainWindow):
         stat_cards = [
             ("📦 Jumlah Produk", str(stats["products"])),
             ("💰 Transaksi Hari Ini", str(stats["sales_today"])),
-            ("💵 Pendapatan", f"Rp {int(stats['revenue_today']):,}".replace(",", ".")),
+            ("💵 Pendapatan Hari Ini", f"Rp {int(stats['revenue_today']):,}".replace(",", ".")),
         ]
 
         for label, value in stat_cards:
