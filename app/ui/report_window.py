@@ -114,4 +114,4 @@ class ReportWindow(QWidget):
 
 
     def go_back(self):
-        self.main_window.show_menu()
+        self.main_window.show_dashboard()

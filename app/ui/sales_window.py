@@ -104,4 +104,4 @@ class SalesWindow(QWidget):
         self.update_table()
 
     def go_back(self):
-        self.main_window.show_menu()
+        self.main_window.show_dashboard()
