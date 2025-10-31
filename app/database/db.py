@@ -56,34 +56,6 @@ def init_db():
 
 
 # ------------------------------
-# DASHBOARD STATS
-# ------------------------------
-def get_dashboard_stats():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    # Jumlah produk
-    cur.execute("SELECT COUNT(*) FROM products")
-    total_products = cur.fetchone()[0]
-
-    # Transaksi & total hari ini
-    cur.execute("""
-        SELECT COUNT(*), IFNULL(SUM(total), 0)
-        FROM sales
-        WHERE DATE(sale_date) = DATE('now', 'localtime')
-    """)
-    total_sales, total_revenue = cur.fetchone()
-
-    conn.close()
-
-    return {
-        "products": total_products,
-        "sales_today": total_sales,
-        "revenue_today": total_revenue
-    }
-
-
-# ------------------------------
 # SIMPLE GETTER
 # ------------------------------
 def get_all_products():
