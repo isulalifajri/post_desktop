@@ -19,9 +19,10 @@ class ProductWindow(QWidget):
 
         # Tabel produk
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["ID", "Nama", "Harga"])
         layout.addWidget(self.table)
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["ID", "Nama", "Harga", "Stok"])
+
 
         # Tombol-tombol
         button_layout = QHBoxLayout()
@@ -50,7 +51,7 @@ class ProductWindow(QWidget):
     def load_products(self):
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, price FROM products")
+        cursor.execute("SELECT id, name, price, stock FROM products")
         rows = cursor.fetchall()
         conn.close()
 
@@ -70,21 +71,25 @@ class ProductWindow(QWidget):
         input_name = QLineEdit()
         input_price = QLineEdit()
         input_price.setPlaceholderText("contoh: 12000")
+        input_stock = QLineEdit()
+        input_stock.setPlaceholderText("contoh: 10")
+
 
         form_layout.addRow("Nama Produk:", input_name)
         form_layout.addRow("Harga:", input_price)
+        form_layout.addRow("Stok:", input_stock)
 
         btn_save = QPushButton("Simpan")
         btn_cancel = QPushButton("Batal")
 
-        btn_save.clicked.connect(lambda: self.save_product(dialog, input_name.text(), input_price.text()))
+        btn_save.clicked.connect(lambda: self.save_product(dialog, input_name.text(), input_price.text(), input_stock.text()))
         btn_cancel.clicked.connect(dialog.reject)
 
         form_layout.addRow(btn_save, btn_cancel)
 
         dialog.exec()
 
-    def save_product(self, dialog, name, price):
+    def save_product(self, dialog, name, price, stock):
         if not name or not price:
             QMessageBox.warning(self, "Error", "Nama dan harga tidak boleh kosong!")
             return
@@ -94,10 +99,15 @@ class ProductWindow(QWidget):
         except ValueError:
             QMessageBox.warning(self, "Error", "Harga harus berupa angka!")
             return
+        try:
+            stock = int(stock)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Stok harus berupa angka!")
+            return
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO products (name, price, stock) VALUES (?, ?, 0)", (name, price))
+        cursor.execute("INSERT INTO products (name, price, stock) VALUES (?, ?, ?)", (name, price, stock))
         conn.commit()
         conn.close()
 
@@ -118,6 +128,7 @@ class ProductWindow(QWidget):
         product_id = self.table.item(selected_row, 0).text()
         old_name = self.table.item(selected_row, 1).text()
         old_price = self.table.item(selected_row, 2).text()
+        old_stock = self.table.item(selected_row, 3).text()
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Edit Produk")
@@ -125,21 +136,23 @@ class ProductWindow(QWidget):
 
         input_name = QLineEdit(old_name)
         input_price = QLineEdit(old_price)
+        input_stock = QLineEdit(old_stock)
 
         form_layout.addRow("Nama Produk:", input_name)
         form_layout.addRow("Harga:", input_price)
+        form_layout.addRow("Stok:", input_stock)
 
         btn_update = QPushButton("Simpan Perubahan")
         btn_cancel = QPushButton("Batal")
 
-        btn_update.clicked.connect(lambda: self.update_product(dialog, product_id, input_name.text(), input_price.text()))
+        btn_update.clicked.connect(lambda: self.update_product(dialog, product_id, input_name.text(), input_price.text(), input_stock.text()))
         btn_cancel.clicked.connect(dialog.reject)
 
         form_layout.addRow(btn_update, btn_cancel)
 
         dialog.exec()
 
-    def update_product(self, dialog, product_id, name, price):
+    def update_product(self, dialog, product_id, name, price, stock):
         """Update data produk ke database"""
         if not name or not price:
             QMessageBox.warning(self, "Error", "Nama dan harga tidak boleh kosong!")
@@ -150,10 +163,15 @@ class ProductWindow(QWidget):
         except ValueError:
             QMessageBox.warning(self, "Error", "Harga harus berupa angka!")
             return
+        try:
+            stock = int(stock)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Stok harus berupa angka!")
+            return
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE products SET name = ?, price = ? WHERE id = ?", (name, price, product_id))
+        cursor.execute("UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?", (name, price, stock, product_id))
         conn.commit()
         conn.close()
 
