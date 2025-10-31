@@ -56,9 +56,15 @@ jika muncul jendela window(GUI) berarti berhasil
 Dashboard
 ├── Produk
 ├── Transaksi
-├── Stok
 ├── Laporan
 └── Pengaturan
+
+# untuk menampilkan data dlm bentuk chart
+
+```
+pip install matplotlib
+
+```
 
 
 

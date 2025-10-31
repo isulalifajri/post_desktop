@@ -54,6 +54,9 @@ class SalesWindow(QWidget):
         self.setLayout(layout)
         self.cart = []  # keranjang sementara
 
+    # ==============================
+    # Load produk dari database
+    # ==============================
     def load_products(self):
         conn = get_connection()
         cursor = conn.cursor()
@@ -65,8 +68,10 @@ class SalesWindow(QWidget):
         for p in self.products:
             self.cmb_product.addItem(f"{p[1]} - Rp{p[2]:,.0f}", userData=p)
 
+    # ==============================
+    # Tambahkan ke keranjang
+    # ==============================
     def add_transaction(self):
-        """Tambahkan produk ke tabel transaksi"""
         product = self.cmb_product.currentData()
         qty = self.spin_qty.value()
         total = product[2] * qty
@@ -74,6 +79,9 @@ class SalesWindow(QWidget):
         self.cart.append((product[0], product[1], product[2], qty, total))
         self.update_table()
 
+    # ==============================
+    # Update tabel tampilan
+    # ==============================
     def update_table(self):
         self.table.setRowCount(len(self.cart))
         for i, (_, name, price, qty, total) in enumerate(self.cart):
@@ -82,16 +90,31 @@ class SalesWindow(QWidget):
             self.table.setItem(i, 2, QTableWidgetItem(str(qty)))
             self.table.setItem(i, 3, QTableWidgetItem(str(total)))
 
+    # ==============================
+    # Simpan transaksi
+    # ==============================
     def save_transaction(self):
-        """Simpan semua transaksi ke database"""
+        if not self.cart:
+            QMessageBox.warning(self, "Peringatan", "Tidak ada item dalam transaksi!")
+            return
+
         conn = get_connection()
         cursor = conn.cursor()
 
+        # Hitung total transaksi
+        total_all = sum(item[4] for item in self.cart)
+
+        # Simpan ke tabel sales (transaksi utama)
+        sale_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("INSERT INTO sales (sale_date, total) VALUES (?, ?)", (sale_date, total_all))
+        sale_id = cursor.lastrowid
+
+        # Simpan detail tiap produk ke sales_items
         for pid, _, price, qty, total in self.cart:
             cursor.execute("""
-                INSERT INTO sales (product_id, quantity, total, sale_date)
+                INSERT INTO sales_items (sale_id, product_id, qty, price)
                 VALUES (?, ?, ?, ?)
-            """, (pid, qty, total, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            """, (sale_id, pid, qty, price))
 
             # Kurangi stok produk
             cursor.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (qty, pid))
@@ -103,5 +126,8 @@ class SalesWindow(QWidget):
         self.cart.clear()
         self.update_table()
 
+    # ==============================
+    # Kembali ke menu utama
+    # ==============================
     def go_back(self):
         self.main_window.show_dashboard()
