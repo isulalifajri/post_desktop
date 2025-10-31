@@ -218,7 +218,7 @@ class MainWindow(QMainWindow):
 
         stat_cards = [
             ("📦 Jumlah Produk", str(stats["products"])),
-            ("💰 Transaksi Hari Ini", str(stats["sales_today"])),
+            ("💰 Jumlah Transaksi Hari Ini", str(stats["sales_today"])),
             ("💵 Pendapatan Hari Ini", f"Rp {int(stats['revenue_today']):,}".replace(",", ".")),
         ]
 

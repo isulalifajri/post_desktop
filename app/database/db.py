@@ -106,6 +106,7 @@ def get_dashboard_stats():
 # 📊 Pendapatan 3 Bulan Terakhir
 # =====================================================
 def get_last_3_months_revenue():
+    from datetime import datetime, timedelta
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -122,5 +123,17 @@ def get_last_3_months_revenue():
     data = cursor.fetchall()
     conn.close()
 
-    formatted = [(month, total or 0) for month, total in data]
+    # ubah hasil DB ke dict: {'2025-08': 50000, '2025-10': 120000, ...}
+    data_dict = {month: (total or 0) for month, total in data}
+
+    # buat list 3 bulan terakhir sesuai format DB
+    months = []
+    today = datetime.now().replace(day=1)
+    for i in range(2, -1, -1):
+        m = (today - timedelta(days=30 * i)).strftime("%Y-%m")
+        months.append(m)
+
+    # isi pendapatan, kalau bulan hilang = 0
+    formatted = [(m, data_dict.get(m, 0)) for m in months]
+
     return formatted
