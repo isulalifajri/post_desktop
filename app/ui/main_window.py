@@ -1,5 +1,8 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
 from app.ui.product_window import ProductWindow
+from app.ui.sales_window import SalesWindow
+from app.ui.report_window import ReportWindow
+
 
 
 class MainWindow(QMainWindow):
@@ -28,6 +31,8 @@ class MainWindow(QMainWindow):
         # Aksi tombol
         btn_products.clicked.connect(self.open_products)
         btn_exit.clicked.connect(self.close)
+        btn_sales.clicked.connect(self.open_sales)
+        btn_reports.clicked.connect(self.open_reports)
 
         # Tambahkan semua tombol ke layout
         for btn in [btn_products, btn_sales, btn_reports, btn_exit]:
@@ -42,3 +47,13 @@ class MainWindow(QMainWindow):
         """Buka halaman produk"""
         self.product_window = ProductWindow(self)
         self.setCentralWidget(self.product_window)
+
+    def open_sales(self):
+        self.sales_window = SalesWindow(self)
+        self.setCentralWidget(self.sales_window)
+
+    def open_reports(self):
+        self.report_window = ReportWindow(self)
+        self.setCentralWidget(self.report_window)
+
+
