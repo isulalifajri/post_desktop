@@ -169,24 +169,75 @@ class ProductWindow(QWidget):
     def open_add_product(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Tambah Produk")
-        form_layout = QFormLayout(dialog)
+        dialog.setFixedWidth(400)
+        dialog.setStyleSheet("background-color: #fdfdfd; border-radius: 5px;")
 
+        form_layout = QFormLayout()
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout.setSpacing(10)
+
+        # Input fields dengan style modern
         input_name = QLineEdit()
+        input_name.setPlaceholderText("Input your name product")
+        input_name.setStyleSheet("padding: 5px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
+
         input_price = QLineEdit()
-        input_price.setPlaceholderText("contoh: 12000")
+        input_price.setPlaceholderText("exc: 12000")
+        input_price.setStyleSheet("padding: 5px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
+
         input_stock = QLineEdit()
-        input_stock.setPlaceholderText("contoh: 10")
+        input_stock.setPlaceholderText("exc: 10")
+        input_stock.setStyleSheet("padding: 5px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
 
-        form_layout.addRow("Nama Produk:", input_name)
-        form_layout.addRow("Harga:", input_price)
-        form_layout.addRow("Stok:", input_stock)
+        label_name = QLabel("Nama Produk:")
+        label_name.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_name, input_name)
 
+        label_price = QLabel("Harga:")
+        label_price.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_price, input_price)
+
+        label_stock = QLabel("Stok:")
+        label_stock.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_stock, input_stock)
+
+        # Tombol simpan dan batal dengan style modern
         btn_save = QPushButton("Simpan")
-        btn_cancel = QPushButton("Batal")
+        btn_save.setStyleSheet("""
+            background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #27ae60, stop:1 #2ecc71);
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+        """)
         btn_save.clicked.connect(lambda: self.save_product(dialog, input_name.text(), input_price.text(), input_stock.text()))
+
+        btn_cancel = QPushButton("Batal")
+        btn_cancel.setStyleSheet("""
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+        """)
         btn_cancel.clicked.connect(dialog.reject)
-        form_layout.addRow(btn_save, btn_cancel)
+
+        # Layout tombol
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(btn_save)
+        button_layout.addWidget(btn_cancel)
+
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(form_layout)
+        main_layout.addLayout(button_layout)
+        dialog.setLayout(main_layout)
+
         dialog.exec()
+
 
     def save_product(self, dialog, name, price, stock):
         if not name or not price:
@@ -205,7 +256,35 @@ class ProductWindow(QWidget):
         conn.commit()
         conn.close()
 
-        QMessageBox.information(self, "Sukses", f"Produk '{name}' berhasil ditambahkan.")
+        msg = QMessageBox(self)
+        msg.setWindowTitle("✅ Sukses")
+        msg.setText(f"Produk <b>{name}</b> berhasil ditambahkan!")
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #f9f9f9;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            QMessageBox QLabel {
+                color: #2c3e50;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QMessageBox QPushButton {
+                background-color: #27ae60;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border-radius: 6px;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #2ecc71;
+            }
+        """)
+        msg.exec()
+
         dialog.accept()
         self.load_products()
 
@@ -220,23 +299,70 @@ class ProductWindow(QWidget):
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Edit Produk")
-        form_layout = QFormLayout(dialog)
+        dialog.setFixedWidth(400)
+        dialog.setStyleSheet("background-color: #fdfdfd; border-radius: 10px;")
+
+        form_layout = QFormLayout()
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout.setSpacing(15)
 
         input_name = QLineEdit(old_name)
+        input_name.setStyleSheet("padding: 8px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
+
         old_price_clean = old_price.replace("Rp ", "").replace(".", "").strip()
         input_price = QLineEdit(old_price_clean)
+        input_price.setStyleSheet("padding: 8px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
+
         input_stock = QLineEdit(old_stock)
+        input_stock.setStyleSheet("padding: 8px; font-size: 16px; border: 1px solid #bdc3c7; border-radius: 6px;")
 
-        form_layout.addRow("Nama Produk:", input_name)
-        form_layout.addRow("Harga:", input_price)
-        form_layout.addRow("Stok:", input_stock)
+        label_name = QLabel("Nama Produk:")
+        label_name.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_name, input_name)
 
-        btn_update = QPushButton("Simpan Perubahan")
-        btn_cancel = QPushButton("Batal")
+        label_price = QLabel("Harga:")
+        label_price.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_price, input_price)
+
+        label_stock = QLabel("Stok:")
+        label_stock.setStyleSheet("font-weight: bold; font-size: 16px;")
+        form_layout.addRow(label_stock, input_stock)
+
+        btn_update = QPushButton("💾 Simpan Perubahan")
+        btn_update.setStyleSheet("""
+            background-color: #2980b9;
+            color: white;
+            padding: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+        """)
         btn_update.clicked.connect(lambda: self.update_product(dialog, product_id, input_name.text(), input_price.text(), input_stock.text()))
+
+        btn_cancel = QPushButton("❌ Batal")
+        btn_cancel.setStyleSheet("""
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+        """)
         btn_cancel.clicked.connect(dialog.reject)
-        form_layout.addRow(btn_update, btn_cancel)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(btn_update)
+        button_layout.addWidget(btn_cancel)
+
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(form_layout)
+        main_layout.addLayout(button_layout)
+        dialog.setLayout(main_layout)
+
         dialog.exec()
+
 
     def update_product(self, dialog, product_id, name, price, stock):
         if not name or not price:
@@ -255,9 +381,38 @@ class ProductWindow(QWidget):
         conn.commit()
         conn.close()
 
-        QMessageBox.information(self, "Sukses", f"Produk '{name}' berhasil diperbarui.")
+        msg = QMessageBox(self)
+        msg.setWindowTitle("✅ Sukses")
+        msg.setText(f"Produk <b>{name}</b> berhasil diperbarui!")
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #f9f9f9;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            QMessageBox QLabel {
+                color: #2c3e50;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QMessageBox QPushButton {
+                background-color: #27ae60;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border-radius: 6px;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #2ecc71;
+            }
+        """)
+        msg.exec()
+
         dialog.accept()
         self.load_products()
+
 
     # ==========================================
     # HAPUS PRODUK
@@ -266,13 +421,52 @@ class ProductWindow(QWidget):
         product_id = self.product_ids[row_index]
         product_name = self.table.item(row_index, 1).text()
 
-        confirm = QMessageBox.question(
-            self,
-            "Konfirmasi Hapus",
-            f"Yakin ingin menghapus produk '{product_name}'?",
+        # === Konfirmasi hapus dengan style modern ===
+        confirm_box = QMessageBox(self)
+        confirm_box.setWindowTitle("⚠️ Konfirmasi Hapus")
+        confirm_box.setText(f"Yakin ingin menghapus produk <b>{product_name}</b>?")
+        confirm_box.setIcon(QMessageBox.Icon.Warning)
+        confirm_box.setStandardButtons(
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
+        confirm_box.setDefaultButton(QMessageBox.StandardButton.No)
 
+        confirm_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #fefefe;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            QMessageBox QLabel {
+                color: #2c3e50;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QMessageBox QPushButton {
+                background-color: #c0392b;
+                color: white;
+                font-weight: bold;
+                padding: 8px 18px;
+                border-radius: 6px;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton[text="&Yes"] {
+                background-color: #27ae60;
+            }
+            QMessageBox QPushButton[text="&Yes"]:hover {
+                background-color: #2ecc71;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #e74c3c;
+            }
+            QMessageBox QPushButton:disabled {
+                background-color: #bdc3c7;
+            }
+        """)
+
+        confirm = confirm_box.exec()
+
+        # === Jika user klik "Ya" ===
         if confirm == QMessageBox.StandardButton.Yes:
             conn = get_connection()
             cursor = conn.cursor()
@@ -280,7 +474,36 @@ class ProductWindow(QWidget):
             conn.commit()
             conn.close()
 
-            QMessageBox.information(self, "Sukses", f"Produk '{product_name}' telah dihapus.")
+            # === Pesan sukses dengan style sama ===
+            success_box = QMessageBox(self)
+            success_box.setWindowTitle("✅ Sukses")
+            success_box.setText(f"Produk <b>{product_name}</b> telah dihapus.")
+            success_box.setIcon(QMessageBox.Icon.Information)
+            success_box.setStyleSheet("""
+                QMessageBox {
+                    background-color: #f9f9f9;
+                    border-radius: 10px;
+                    padding: 15px;
+                }
+                QMessageBox QLabel {
+                    color: #2c3e50;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QMessageBox QPushButton {
+                    background-color: #27ae60;
+                    color: white;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    min-width: 80px;
+                }
+                QMessageBox QPushButton:hover {
+                    background-color: #2ecc71;
+                }
+            """)
+            success_box.exec()
+
             self.load_products()
 
     # ==========================================
