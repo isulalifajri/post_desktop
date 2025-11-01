@@ -76,8 +76,7 @@ class SalesWindow(QWidget):
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
+            padding: 13px 0px;
         """)
 
         # Label dan Input untuk Produk & Jumlah (dalam baris yang sama)
