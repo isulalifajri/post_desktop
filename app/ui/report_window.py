@@ -2,9 +2,6 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem,
     QPushButton, QHBoxLayout, QComboBox, QFileDialog, QMessageBox, QHeaderView
 )
-from PyQt6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QCategoryAxis
-from PyQt6.QtGui import QPainter, QColor
-from PyQt6.QtCore import Qt, QPointF
 from app.database.db import get_connection
 import csv
 from datetime import datetime
@@ -29,11 +26,16 @@ class ReportWindow(QWidget):
 
         # ================== Filter bulan & tahun ==================
         label = QLabel("Pilih Bulan & Tahun:")
-        label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+        """)
         layout.addWidget(label)
 
+        # ComboBox
         self.cmb_month = QComboBox()
         self.cmb_year = QComboBox()
+
         combo_style = """
             QComboBox {
                 background-color: #fff;
@@ -50,6 +52,7 @@ class ReportWindow(QWidget):
             "Juli", "Agustus", "September", "Oktober", "November", "Desember"
         ]
         self.cmb_month.addItems(months)
+
         current_year = datetime.now().year
         for y in range(current_year - 4, current_year + 1):
             self.cmb_year.addItem(str(y))
@@ -57,6 +60,7 @@ class ReportWindow(QWidget):
         self.cmb_month.setCurrentIndex(datetime.now().month - 1)
         self.cmb_year.setCurrentText(str(current_year))
 
+        # Layout filter
         hbox_filter = QHBoxLayout()
         hbox_filter.addWidget(self.cmb_month)
         hbox_filter.addWidget(self.cmb_year)
@@ -71,10 +75,17 @@ class ReportWindow(QWidget):
         btn_export.clicked.connect(self.export_csv)
         btn_back.clicked.connect(self.go_back)
 
-        def style_btn(btn, color):
+        # Styling tombol
+        btn_style = {
+            "load": {"bg": "#3498db", "hover": "#2980b9", "pressed": "#1d4ed8"},
+            "export": {"bg": "#27ae60", "hover": "#2ecc71", "pressed": "#27ae60"},
+            "back": {"bg": "#e74c3c", "hover": "#c0392b", "pressed": "#e74c3c"}
+        }
+
+        def set_button_style(btn, style):
             btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {color};
+                    background-color: {style['bg']};
                     color: white;
                     font-size: 14px;
                     padding: 10px;
@@ -82,13 +93,16 @@ class ReportWindow(QWidget):
                     min-width: 160px;
                 }}
                 QPushButton:hover {{
-                    background-color: #2c3e50;
+                    background-color: {style['hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {style['pressed']};
                 }}
             """)
 
-        style_btn(btn_load, "#3498db")
-        style_btn(btn_export, "#27ae60")
-        style_btn(btn_back, "#e74c3c")
+        set_button_style(btn_load, btn_style["load"])
+        set_button_style(btn_export, btn_style["export"])
+        set_button_style(btn_back, btn_style["back"])
 
         hbox_btn = QHBoxLayout()
         hbox_btn.addWidget(btn_load)
@@ -96,15 +110,12 @@ class ReportWindow(QWidget):
         hbox_btn.addWidget(btn_back)
         layout.addLayout(hbox_btn)
 
-        # ================== Layout utama tabel + grafik ==================
-        hbox_main = QHBoxLayout()
-
-        # ===== TABEL LAPORAN =====
+        # ================== Tabel laporan ==================
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Tanggal Pembelian", "Produk", "Harga", "Jumlah", "Subtotal"])
         self.table.verticalHeader().setVisible(False)
-        self.table.setWordWrap(True)
+        self.table.setWordWrap(True)  # 🟢 Aktifkan wrapping
         self.table.setStyleSheet("""
             QTableWidget {
                 border: 1px solid #ddd;
@@ -118,28 +129,18 @@ class ReportWindow(QWidget):
             }
             QTableWidget::item {
                 padding: 8px;
-                white-space: pre-wrap;
+                white-space: pre-wrap;  /* biar text bisa turun ke bawah */
             }
             QTableWidget::item:selected {
                 background-color: #f39c12;
                 color: white;
             }
         """)
+        layout.addWidget(self.table)
+
+        # Atur ukuran kolom awal
         self.table.setColumnWidth(0, 180)
         self.table.horizontalHeader().setStretchLastSection(True)
-        hbox_main.addWidget(self.table, 3)
-
-        # ===== GRAFIK (Line Chart) =====
-        self.chart = QChart()
-        self.chart.setTitle("📈 Tren Barang Terjual per Tanggal")
-        self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
-        self.chart.setBackgroundBrush(QColor("#f8f9fa"))
-
-        self.chart_view = QChartView(self.chart)
-        self.chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
-        hbox_main.addWidget(self.chart_view, 2)  # Lebar relatif lebih kecil dari tabel
-
-        layout.addLayout(hbox_main)
 
         # Label total
         self.total_label = QLabel("Total Penjualan: Rp0 | Total Barang Terjual: 0")
@@ -153,13 +154,19 @@ class ReportWindow(QWidget):
 
         # Label pesan kosong
         self.empty_label = QLabel("")
-        self.empty_label.setStyleSheet("color: gray; font-style: italic; margin-top: 5px;")
+        self.empty_label.setStyleSheet("""
+            color: gray;
+            font-style: italic;
+            margin-top: 5px;
+        """)
         layout.addWidget(self.empty_label)
 
         self.setLayout(layout)
+
+        # Tampilkan laporan default bulan ini
         self.load_report()
 
-    # ======== Format tanggal Indonesia ========
+    # ======================= UTIL: Format tanggal Indonesia =======================
     def format_tanggal(self, tanggal_str):
         bulan_indonesia = [
             "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -173,9 +180,9 @@ class ReportWindow(QWidget):
                 dt = datetime.strptime(tanggal_str, "%Y-%m-%d")
                 return f"{dt.day} {bulan_indonesia[dt.month - 1]} {dt.year}"
             except ValueError:
-                return tanggal_str
+                return tanggal_str  # fallback
 
-    # ======== Load Report + Grafik ========
+    # ======================= LOAD REPORT =======================
     def load_report(self):
         month_index = self.cmb_month.currentIndex() + 1
         year = int(self.cmb_year.currentText())
@@ -201,77 +208,33 @@ class ReportWindow(QWidget):
         if not rows:
             self.empty_label.setText("📭 Belum ada transaksi pada bulan ini.")
             self.total_label.setText("Total Penjualan: Rp0 | Total Barang Terjual: 0")
-            self.chart.removeAllSeries()
             return
 
         self.table.setRowCount(len(rows))
-        sales_per_day = {}
-
         for i, row in enumerate(rows):
             formatted_date = self.format_tanggal(row[0])
             row_data = [formatted_date, row[1], row[2], row[3], row[4]]
+
             for j, value in enumerate(row_data):
                 item = QTableWidgetItem(str(value))
-                item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                item.setTextAlignment(1)  # kiri-atas
                 self.table.setItem(i, j, item)
 
             total_sales += row[4]
             total_qty += row[3]
 
-            # Rekap jumlah per tanggal
-            tanggal_asli = row[0].split(" ")[0]
-            sales_per_day[tanggal_asli] = sales_per_day.get(tanggal_asli, 0) + row[3]
-
-        self.table.resizeRowsToContents()
+        self.table.resizeRowsToContents()  # 🟢 Biar wrapping terlihat
         self.total_label.setText(f"Total Penjualan: Rp{total_sales:,.0f} | Total Barang Terjual: {total_qty}")
 
-        # ===== Update grafik =====
-        self.update_chart(sales_per_day)
-
-    def update_chart(self, data_harian):
-        self.chart.removeAllSeries()
-        if not data_harian:
-            return
-
-        # Buat series garis
-        series = QLineSeries()
-        sorted_days = sorted(data_harian.keys())
-        for idx, tgl in enumerate(sorted_days):
-            series.append(QPointF(idx + 1, data_harian[tgl]))
-
-        series.setColor(QColor("#3498db"))
-        series.setName("Barang Terjual")
-        self.chart.addSeries(series)
-
-        # Buat sumbu X (tanggal)
-        axis_x = QCategoryAxis()
-        for idx, tgl in enumerate(sorted_days):
-            try:
-                dt = datetime.strptime(tgl, "%Y-%m-%d")
-                label = str(dt.day)
-            except ValueError:
-                label = tgl
-            axis_x.append(label, idx + 1)
-        axis_x.setLabelsAngle(-45)
-        axis_x.setTitleText("Tanggal")
-        self.chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
-        series.attachAxis(axis_x)
-
-        # Buat sumbu Y (jumlah)
-        axis_y = QValueAxis()
-        axis_y.setTitleText("Jumlah Barang Terjual")
-        axis_y.setLabelFormat("%d")
-        self.chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
-        series.attachAxis(axis_y)
-
-    # ======== Export CSV ========
+    # ======================= EXPORT CSV =======================
     def export_csv(self):
         month_index = self.cmb_month.currentIndex() + 1
         year = int(self.cmb_year.currentText())
         month_name = self.cmb_month.currentText()
 
         filename, _ = QFileDialog.getSaveFileName(
-            self, "Simpan Laporan Penjualan",
+            self,
+            "Simpan Laporan Penjualan",
             f"laporan_{month_name}_{year}.csv",
             "CSV Files (*.csv)"
         )
@@ -292,7 +255,7 @@ class ReportWindow(QWidget):
         conn.close()
 
         if not rows:
-            QMessageBox.information(self, "Tidak Ada Data", "Tidak ada transaksi untuk bulan ini.")
+            QMessageBox.information(self, "Tidak Ada Data", "Tidak ada transaksi untuk bulan ini, jadi tidak bisa diekspor.")
             return
 
         total_qty = 0
@@ -312,5 +275,6 @@ class ReportWindow(QWidget):
 
         QMessageBox.information(self, "Berhasil", f"Laporan disimpan ke:\n{filename}")
 
+    # ======================= KEMBALI KE MENU =======================
     def go_back(self):
         self.main_window.show_dashboard()
