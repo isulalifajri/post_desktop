@@ -10,6 +10,7 @@ class ProductWindow(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
+        self.product_ids = []  # menyimpan id asli dari database
 
         # Layout utama
         layout = QVBoxLayout()
@@ -27,24 +28,18 @@ class ProductWindow(QWidget):
         """)
         layout.addWidget(title)
 
-        # ------------------------
         # Pencarian Produk Real-time
-        # ------------------------
         search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("🔍 Cari produk berdasarkan nama...")
         self.search_input.setStyleSheet("padding: 8px; font-size: 16px;")
         search_layout.addWidget(self.search_input)
         layout.addLayout(search_layout)
-
-        # Trigger pencarian real-time
         self.search_input.textChanged.connect(self.search_product)
 
-        # ------------------------
         # Tabel Produk
-        # ------------------------
         self.table = QTableWidget()
-        self.table.setColumnCount(5)  # Tambah kolom aksi
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["No", "Nama", "Harga", "Stok", "Aksi"])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -64,11 +59,8 @@ class ProductWindow(QWidget):
                 background-color: #ecf0f1; 
             }
             QTableWidget::item:selected {
-                background-color: #2980b9;  /* biru pilihan */
-                color: white;               /* teks putih saat dipilih */
-            }
-            QTableWidget::item {
-                background-color: #ffffff; 
+                background-color: #2980b9;
+                color: white;
             }
             QHeaderView::section {
                 background-color: #34495e;
@@ -82,13 +74,13 @@ class ProductWindow(QWidget):
         layout.addWidget(self.table)
 
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # No
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)           # Nama
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)           # Harga
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)           # Stok
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)           # Aksi
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
 
-        # Tombol tambah dan kembali
+        # Tombol tambah & kembali
         button_layout = QHBoxLayout()
         btn_add = QPushButton("Tambah Produk")
         btn_add.setStyleSheet("background-color: #27ae60; color: white; padding: 10px; font-weight: bold;")
@@ -113,9 +105,13 @@ class ProductWindow(QWidget):
         rows = cursor.fetchall()
         conn.close()
 
+        self.product_ids = []
         self.table.setRowCount(len(rows))
+
         for i, row in enumerate(rows):
-            # Set tinggi baris
+            product_id, name, price, stock = row
+            self.product_ids.append(product_id)
+
             self.table.setRowHeight(i, 50)
 
             # No urut manual
@@ -123,41 +119,35 @@ class ProductWindow(QWidget):
             no_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(i, 0, no_item)
 
-            # Data lainnya
-            for j, value in enumerate(row[1:], start=1):  # skip id asli
-                if j == 2:  # kolom Harga
-                    value_str = f"Rp {int(value):,}".replace(",", ".")
-                    item = QTableWidgetItem(value_str)
-                else:
-                    item = QTableWidgetItem(str(value))
-                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(i, j, item)
+            # Nama
+            item_name = QTableWidgetItem(name)
+            item_name.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 1, item_name)
 
-            # Kolom aksi (Edit & Hapus) diperbesar
+            # Harga
+            price_str = f"Rp {int(price):,}".replace(",", ".")
+            item_price = QTableWidgetItem(price_str)
+            item_price.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 2, item_price)
+
+            # Stok
+            item_stock = QTableWidgetItem(str(stock))
+            item_stock.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 3, item_stock)
+
+            # Aksi
             btn_edit = QPushButton("Edit")
-            btn_edit.setStyleSheet("""
-                background-color: #2980b9;
-                color: white;
-                padding: 8px 16px;
-                font-weight: bold;
-                font-size: 14px;
-            """)
+            btn_edit.setStyleSheet("background-color: #2980b9; color: white; padding: 8px 16px; font-weight: bold; font-size: 14px;")
             btn_edit.clicked.connect(lambda checked, r=i: self.open_edit_product(r))
 
             btn_delete = QPushButton("Hapus")
-            btn_delete.setStyleSheet("""
-                background-color: #e74c3c;
-                color: white;
-                padding: 8px 16px;
-                font-weight: bold;
-                font-size: 14px;
-            """)
+            btn_delete.setStyleSheet("background-color: #e74c3c; color: white; padding: 8px 16px; font-weight: bold; font-size: 14px;")
             btn_delete.clicked.connect(lambda checked, r=i: self.delete_product(r))
 
             action_layout = QHBoxLayout()
             action_layout.addWidget(btn_edit)
             action_layout.addWidget(btn_delete)
-            action_layout.setContentsMargins(0, 0, 0, 0)
+            action_layout.setContentsMargins(0,0,0,0)
             action_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             action_widget = QWidget()
             action_widget.setLayout(action_layout)
@@ -170,11 +160,8 @@ class ProductWindow(QWidget):
     def search_product(self):
         query = self.search_input.text().lower()
         for i in range(self.table.rowCount()):
-            item = self.table.item(i, 1)  # kolom Nama Produk
-            if query in item.text().lower():
-                self.table.setRowHidden(i, False)
-            else:
-                self.table.setRowHidden(i, True)
+            item = self.table.item(i, 1)  # Nama Produk
+            self.table.setRowHidden(i, query not in item.text().lower())
 
     # ==========================================
     # TAMBAH PRODUK
@@ -226,7 +213,7 @@ class ProductWindow(QWidget):
     # EDIT PRODUK
     # ==========================================
     def open_edit_product(self, row_index):
-        product_id = row_index + 1  # nomor urut manual
+        product_id = self.product_ids[row_index]
         old_name = self.table.item(row_index, 1).text()
         old_price = self.table.item(row_index, 2).text()
         old_stock = self.table.item(row_index, 3).text()
@@ -236,7 +223,8 @@ class ProductWindow(QWidget):
         form_layout = QFormLayout(dialog)
 
         input_name = QLineEdit(old_name)
-        input_price = QLineEdit(old_price)
+        old_price_clean = old_price.replace("Rp ", "").replace(".", "").strip()
+        input_price = QLineEdit(old_price_clean)
         input_stock = QLineEdit(old_stock)
 
         form_layout.addRow("Nama Produk:", input_name)
@@ -255,7 +243,7 @@ class ProductWindow(QWidget):
             QMessageBox.warning(self, "Error", "Nama dan harga tidak boleh kosong!")
             return
         try:
-            price = float(price)
+            price = float(price.replace("Rp", "").replace(".", "").strip())
             stock = int(stock)
         except ValueError:
             QMessageBox.warning(self, "Error", "Harga dan stok harus berupa angka!")
@@ -263,7 +251,7 @@ class ProductWindow(QWidget):
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?", (name, price, stock, product_id))
+        cursor.execute("UPDATE products SET name=?, price=?, stock=? WHERE id=?", (name, price, stock, product_id))
         conn.commit()
         conn.close()
 
@@ -275,7 +263,7 @@ class ProductWindow(QWidget):
     # HAPUS PRODUK
     # ==========================================
     def delete_product(self, row_index):
-        product_id = row_index + 1
+        product_id = self.product_ids[row_index]
         product_name = self.table.item(row_index, 1).text()
 
         confirm = QMessageBox.question(
@@ -288,7 +276,7 @@ class ProductWindow(QWidget):
         if confirm == QMessageBox.StandardButton.Yes:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
+            cursor.execute("DELETE FROM products WHERE id=?", (product_id,))
             conn.commit()
             conn.close()
 
