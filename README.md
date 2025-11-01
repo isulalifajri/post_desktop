@@ -66,6 +66,13 @@ pip install matplotlib
 
 ```
 
+# untuk menampilkan data kedalam bentuk pdf
+
+```
+pip install reportlab
+
+```
+
 
 
 
