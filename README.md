@@ -71,6 +71,8 @@ yg ini line chart:
 ```
 pip install PyQt6-Charts
 
+pip install mplcursors
+
 ```
 
 # untuk menampilkan data kedalam bentuk pdf

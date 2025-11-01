@@ -1,10 +1,14 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem,
+    QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QDialog,
     QPushButton, QHBoxLayout, QComboBox, QFileDialog, QMessageBox, QHeaderView
 )
 from app.database.db import get_connection
 import csv
 from datetime import datetime
+import mplcursors
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 
 
 class ReportWindow(QWidget):
@@ -68,16 +72,19 @@ class ReportWindow(QWidget):
 
         # Tombol
         btn_load = QPushButton("Tampilkan Laporan")
+        btn_chart = QPushButton("📈 Tampilkan Chart")
         btn_export = QPushButton("Export ke CSV")
         btn_back = QPushButton("⬅️ Kembali ke Menu")
 
         btn_load.clicked.connect(self.load_report)
+        btn_chart.clicked.connect(self.show_chart)   
         btn_export.clicked.connect(self.export_csv)
         btn_back.clicked.connect(self.go_back)
 
         # Styling tombol
         btn_style = {
             "load": {"bg": "#3498db", "hover": "#2980b9", "pressed": "#1d4ed8"},
+            "chart": {"bg": "#8e44ad", "hover": "#9b59b6", "pressed": "#7d3c98"},
             "export": {"bg": "#27ae60", "hover": "#2ecc71", "pressed": "#27ae60"},
             "back": {"bg": "#e74c3c", "hover": "#c0392b", "pressed": "#e74c3c"}
         }
@@ -101,11 +108,13 @@ class ReportWindow(QWidget):
             """)
 
         set_button_style(btn_load, btn_style["load"])
+        set_button_style(btn_chart, btn_style["chart"])
         set_button_style(btn_export, btn_style["export"])
         set_button_style(btn_back, btn_style["back"])
 
         hbox_btn = QHBoxLayout()
         hbox_btn.addWidget(btn_load)
+        hbox_btn.addWidget(btn_chart)
         hbox_btn.addWidget(btn_export)
         hbox_btn.addWidget(btn_back)
         layout.addLayout(hbox_btn)
@@ -294,6 +303,63 @@ class ReportWindow(QWidget):
             writer.writerow(["", "TOTAL", "", total_qty, self.format_rupiah(total_sales)])
 
         QMessageBox.information(self, "Berhasil", f"Laporan disimpan ke:\n{filename}")
+
+    def show_chart(self):
+        month_index = self.cmb_month.currentIndex() + 1
+        year = int(self.cmb_year.currentText())
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT DATE(s.sale_date) as tgl, SUM(si.qty) as total_qty
+            FROM sales s
+            JOIN sales_items si ON s.id = si.sale_id
+            WHERE strftime('%Y', s.sale_date) = ? AND strftime('%m', s.sale_date) = ?
+            GROUP BY DATE(s.sale_date)
+            ORDER BY DATE(s.sale_date) ASC
+        """, (str(year), f"{month_index:02d}"))
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            QMessageBox.information(self, "Chart Kosong", "Belum ada transaksi di bulan ini.")
+            return
+
+        dates = [row[0] for row in rows]
+        totals = [row[1] for row in rows]
+
+        fig = Figure(figsize=(8, 4))
+        ax = fig.add_subplot(111)
+        line, = ax.plot(dates, totals, marker='o', linestyle='-', color='teal')
+        ax.set_title(f"Total Barang Terjual per Tanggal ({self.cmb_month.currentText()} {year})")
+        ax.set_xlabel("Tanggal")
+        ax.set_ylabel("Jumlah Barang Terjual")
+        ax.grid(True)
+        fig.autofmt_xdate(rotation=45)
+
+        # ===== Tambahkan hover tooltip =====
+        cursor = mplcursors.cursor(line, hover=True)
+        cursor.connect(
+            "add",
+            lambda sel: sel.annotation.set_text(
+                f"{dates[int(sel.index)]}\n{totals[int(sel.index)]} barang"
+            )
+        )
+
+
+        # ===== MODAL DIALOG =====
+        self.chart_dialog = QDialog(self)
+        self.chart_dialog.setWindowTitle("Chart Penjualan")
+        self.chart_dialog.setModal(True)
+
+        layout = QVBoxLayout()
+        canvas = FigureCanvas(fig)
+        layout.addWidget(canvas)
+
+        self.chart_dialog.setLayout(layout)
+        self.chart_dialog.resize(800, 400)
+        self.chart_dialog.exec()  # tampilkan modal
+
 
     # ======================= KEMBALI KE MENU =======================
     def go_back(self):
