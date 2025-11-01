@@ -162,31 +162,48 @@ class SalesWindow(QWidget):
         self.cmb_product.setCompleter(completer)
 
     def add_transaction(self):
-        # Menambahkan produk ke dalam transaksi
         product = self.cmb_product.currentData()
         if not product:
             QMessageBox.warning(self, "Error", "Silakan pilih produk dulu.")
             return
 
         qty = self.spin_qty.value()
+        
+        # Ambil stok dari database
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT stock FROM products WHERE id = ?", (product[0],))
+        stock = cursor.fetchone()[0]
+        conn.close()
+
+        # Validasi stok
+        existing_qty_in_cart = 0
+        for item in self.cart:
+            if item[0] == product[0]:
+                existing_qty_in_cart = item[3]
+
+        if qty + existing_qty_in_cart > stock:
+            QMessageBox.warning(
+                self,
+                "Stok Tidak Cukup",
+                f"Stok {product[1]} hanya tersedia {stock - existing_qty_in_cart} unit."
+            )
+            return
+
         total = product[2] * qty
 
-        # Check if the product already exists in the cart
+        # Tambahkan atau update di keranjang
         product_exists = False
         for i, (pid, name, price, existing_qty, _) in enumerate(self.cart):
-            if pid == product[0]:  # Compare by product ID
-                # Update the quantity and total for the existing product in the cart
+            if pid == product[0]:
                 self.cart[i] = (pid, name, price, existing_qty + qty, price * (existing_qty + qty))
                 product_exists = True
                 break
 
-        # If product does not exist, add a new product entry to the cart
         if not product_exists:
             self.cart.append((product[0], product[1], product[2], qty, total))
 
-        # Update the table after adding or updating the product
         self.update_table()
-
 
     def update_table(self):
         # Memperbarui tabel dengan produk yang telah ditambahkan
