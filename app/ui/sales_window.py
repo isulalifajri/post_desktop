@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox,
-    QHBoxLayout, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView
+    QHBoxLayout, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView, QCompleter
 )
+from PyQt6.QtCore import Qt  # Jangan lupa untuk mengimpor Qt untuk case sensitivity
 from app.database.db import get_connection
 from datetime import datetime
 
@@ -47,14 +48,14 @@ class SalesWindow(QWidget):
             }
 
             QHeaderView::section {
-                background-color: #2563eb;  /* Ubah warna latar belakang header */
+                background-color: #253955;  /* Ubah warna latar belakang header */
                 color: white;                /* Ubah warna teks header */
                 padding: 6px;
                 font-weight: bold;
                 border: none;
             }
         """)
-        
+
         # ================== LAYOUT UI ==================
         layout = QVBoxLayout()
 
@@ -67,7 +68,7 @@ class SalesWindow(QWidget):
 
         card = QWidget()
         card.setLayout(card_layout)
-        card.setStyleSheet("""
+        card.setStyleSheet(""" 
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -130,7 +131,6 @@ class SalesWindow(QWidget):
 
         self.setLayout(layout)
 
-    # =========================================================
     def load_products(self):
         # Fungsi untuk memuat produk dari database
         conn = get_connection()
@@ -140,11 +140,17 @@ class SalesWindow(QWidget):
         conn.close()
 
         self.cmb_product.clear()
+        self.cmb_product.setEditable(True)  # Menambahkan editable mode
+
+        product_names = [f"{p[1]} - Rp{p[2]:,.0f}" for p in self.products]
         for p in self.products:
-            # Menambahkan produk ke dalam combobox
             self.cmb_product.addItem(f"{p[1]} - Rp{p[2]:,.0f}", userData=p)
 
-    # =========================================================
+        # Menggunakan QCompleter untuk menyediakan kemampuan pencarian
+        completer = QCompleter(product_names)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)  # Tidak membedakan huruf besar/kecil
+        self.cmb_product.setCompleter(completer)  # Mengaktifkan completer pada combo box
+
     def add_transaction(self):
         # Fungsi untuk menambahkan produk ke dalam transaksi
         product = self.cmb_product.currentData()
@@ -157,7 +163,6 @@ class SalesWindow(QWidget):
         self.cart.append((product[0], product[1], product[2], qty, total))
         self.update_table()
 
-    # =========================================================
     def update_table(self):
         # Fungsi untuk memperbarui tabel dengan produk yang telah ditambahkan
         self.table.setRowCount(len(self.cart))
@@ -170,7 +175,7 @@ class SalesWindow(QWidget):
             btn_del = QPushButton("Hapus")
             btn_del.setProperty("row_index", i)
             btn_del.clicked.connect(self.handle_remove_by_button)
-            btn_del.setStyleSheet("""
+            btn_del.setStyleSheet(""" 
                 QPushButton {
                     background-color: #ef4444;
                     color: white;
@@ -182,7 +187,6 @@ class SalesWindow(QWidget):
             """)
             self.table.setCellWidget(i, 4, btn_del)
 
-    # =========================================================
     def handle_remove_by_button(self):
         # Fungsi untuk menghapus produk dari keranjang transaksi
         btn = self.sender()
@@ -191,7 +195,6 @@ class SalesWindow(QWidget):
         del self.cart[row]
         self.update_table()
 
-    # =========================================================
     def save_transaction(self):
         # Fungsi untuk menyimpan transaksi ke database
         if not self.cart:
@@ -221,7 +224,6 @@ class SalesWindow(QWidget):
         self.cart.clear()
         self.update_table()
 
-    # =========================================================
     def go_back(self):
         # Fungsi untuk kembali ke halaman utama
         self.main_window.show_dashboard()
