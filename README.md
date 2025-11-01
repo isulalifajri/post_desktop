@@ -66,6 +66,13 @@ pip install matplotlib
 
 ```
 
+yg ini line chart:
+
+```
+pip install PyQt6-Charts
+
+```
+
 # untuk menampilkan data kedalam bentuk pdf
 
 ```
