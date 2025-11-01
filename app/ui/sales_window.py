@@ -12,7 +12,7 @@ class SalesWindow(QWidget):
         self.main_window = main_window
         self.cart = []
 
-        # ================== GLOBAL STYLE ==================
+        # ================== GAYA GLOBAL ==================
         self.setStyleSheet(""" 
             QWidget {
                 font-family: Segoe UI, Roboto, Arial;
@@ -39,14 +39,7 @@ class SalesWindow(QWidget):
                 background-color: #1d4ed8;
             }
 
-            QComboBox, QSpinBox {
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                padding: 6px;
-                background: white;
-                font-size: 14px;
-            }
-
+            
             QTableWidget {
                 border: 1px solid #e5e7eb;
                 gridline-color: #e5e7eb;
@@ -54,22 +47,15 @@ class SalesWindow(QWidget):
             }
 
             QHeaderView::section {
-                background-color: #f3f4f6;
+                background-color: #2563eb;  /* Ubah warna latar belakang header */
+                color: white;                /* Ubah warna teks header */
                 padding: 6px;
                 font-weight: bold;
                 border: none;
             }
-
-            QComboBox {
-                width: 200px;
-            }
-
-            QSpinBox {
-                width: 80px;
-            }
         """)
-
-        # ================== UI LAYOUT ==================
+        
+        # ================== LAYOUT UI ==================
         layout = QVBoxLayout()
 
         title = QLabel("💰 Transaksi Penjualan")
@@ -89,39 +75,35 @@ class SalesWindow(QWidget):
             margin-bottom: 14px;
         """)
 
-        # Label and Input for Product & Quantity (in the same row)
-        layout.addWidget(QLabel("Pilih Produk dan Jumlah:"))
+        # Label dan Input untuk Produk & Jumlah (dalam baris yang sama)
+        layout.addWidget(QLabel("Pilih Produk dan Qty:"))
 
-        # Horizontal Layout for Product and Quantity
-        product_layout = QHBoxLayout()
-        product_layout.setSpacing(10)
+        # Layout Horizontal untuk Produk dan Jumlah
+        hbox_filter = QHBoxLayout()
 
         # Dropdown Produk (ComboBox)
         self.cmb_product = QComboBox()
-        self.cmb_product.setEditable(True)
-        self.cmb_product.lineEdit().setReadOnly(True)
-        self.cmb_product.lineEdit().setPlaceholderText("🔽 Pilih Produk...")
         self.load_products()
 
-        # Jumlah (Quantity - SpinBox)
+        # Jumlah (SpinBox untuk jumlah produk)
         self.spin_qty = QSpinBox()
         self.spin_qty.setRange(1, 100)
         self.spin_qty.setValue(1)
-        self.spin_qty.setToolTip("Masukkan jumlah pembelian")  # Tooltip for guidance
+        self.spin_qty.setToolTip("Masukkan jumlah pembelian")  # Tooltip untuk petunjuk
 
-        # Add both widgets (product combo and quantity spinner) to the horizontal layout
-        product_layout.addWidget(self.cmb_product)
-        product_layout.addWidget(self.spin_qty)
+        # Menambahkan widget produk dan jumlah ke layout horizontal
+        hbox_filter.addWidget(self.cmb_product)
+        hbox_filter.addWidget(self.spin_qty)
 
         # Tombol tambah (Add to transaction button)
         btn_add = QPushButton("➕ Tambah ke Transaksi")
         btn_add.clicked.connect(self.add_transaction)
-        card_layout.addLayout(product_layout)  # Add product layout
+        card_layout.addLayout(hbox_filter)  # Menambahkan layout produk
         card_layout.addWidget(btn_add)
 
         layout.addWidget(card)
 
-        # ================== TABLE ==================
+        # ================== TABEL ==================
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Produk", "Harga", "Jumlah", "Total", "Aksi"])
@@ -134,7 +116,7 @@ class SalesWindow(QWidget):
 
         layout.addWidget(self.table)
 
-        # ================== BUTTONS ==================
+        # ================== TOMBOL-TOMBOL ==================
         btn_save = QPushButton("💾 Simpan Transaksi")
         btn_back = QPushButton("⬅️ Kembali")
 
@@ -150,6 +132,7 @@ class SalesWindow(QWidget):
 
     # =========================================================
     def load_products(self):
+        # Fungsi untuk memuat produk dari database
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, name, price FROM products")
@@ -158,10 +141,12 @@ class SalesWindow(QWidget):
 
         self.cmb_product.clear()
         for p in self.products:
+            # Menambahkan produk ke dalam combobox
             self.cmb_product.addItem(f"{p[1]} - Rp{p[2]:,.0f}", userData=p)
 
     # =========================================================
     def add_transaction(self):
+        # Fungsi untuk menambahkan produk ke dalam transaksi
         product = self.cmb_product.currentData()
         if not product:
             QMessageBox.warning(self, "Error", "Silakan pilih produk dulu.")
@@ -174,6 +159,7 @@ class SalesWindow(QWidget):
 
     # =========================================================
     def update_table(self):
+        # Fungsi untuk memperbarui tabel dengan produk yang telah ditambahkan
         self.table.setRowCount(len(self.cart))
         for i, (_, name, price, qty, total) in enumerate(self.cart):
             self.table.setItem(i, 0, QTableWidgetItem(name))
@@ -198,6 +184,7 @@ class SalesWindow(QWidget):
 
     # =========================================================
     def handle_remove_by_button(self):
+        # Fungsi untuk menghapus produk dari keranjang transaksi
         btn = self.sender()
         row = btn.property("row_index")
 
@@ -206,6 +193,7 @@ class SalesWindow(QWidget):
 
     # =========================================================
     def save_transaction(self):
+        # Fungsi untuk menyimpan transaksi ke database
         if not self.cart:
             QMessageBox.warning(self, "Peringatan", "Tidak ada produk!")
             return
@@ -235,4 +223,5 @@ class SalesWindow(QWidget):
 
     # =========================================================
     def go_back(self):
+        # Fungsi untuk kembali ke halaman utama
         self.main_window.show_dashboard()
