@@ -6,20 +6,24 @@ from app.database.db import get_connection
 import csv
 from datetime import datetime
 
-
 class ReportWindow(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
         layout = QVBoxLayout()
 
+        # Judul
         title = QLabel("📊 Laporan Penjualan Bulanan")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        title.setStyleSheet("""
+            font-size: 22px;
+            font-weight: bold;
+            color: #2C3E50;
+            margin-bottom: 20px;
+            text-align: center;
+        """)
         layout.addWidget(title)
 
-        # ===============================
         # Filter bulan & tahun
-        # ===============================
         layout.addWidget(QLabel("Pilih Bulan & Tahun:"))
 
         hbox_filter = QHBoxLayout()
@@ -44,9 +48,7 @@ class ReportWindow(QWidget):
         hbox_filter.addWidget(self.cmb_year)
         layout.addLayout(hbox_filter)
 
-        # ===============================
         # Tombol
-        # ===============================
         btn_load = QPushButton("Tampilkan Laporan")
         btn_export = QPushButton("Export ke CSV")
         btn_back = QPushButton("⬅️ Kembali ke Menu")
@@ -55,28 +57,102 @@ class ReportWindow(QWidget):
         btn_export.clicked.connect(self.export_csv)
         btn_back.clicked.connect(self.go_back)
 
+        # Styling Tombol
+        btn_load.setStyleSheet("""
+            background-color: #3498db;
+            color: white;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 160px;
+        """)
+        btn_export.setStyleSheet("""
+            background-color: #27ae60;
+            color: white;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 160px;
+        """)
+        btn_back.setStyleSheet("""
+            background-color: #e74c3c;
+            color: white;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 160px;
+        """)
+
+        # Hover effect for buttons
+        btn_load.setStyleSheet(btn_load.styleSheet() + """
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+        btn_export.setStyleSheet(btn_export.styleSheet() + """
+            QPushButton:hover {
+                background-color: #2ecc71;
+            }
+        """)
+        btn_back.setStyleSheet(btn_back.styleSheet() + """
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+        """)
+
+        # Layout Tombol
         hbox_btn = QHBoxLayout()
         hbox_btn.addWidget(btn_load)
         hbox_btn.addWidget(btn_export)
         hbox_btn.addWidget(btn_back)
         layout.addLayout(hbox_btn)
 
-        # ===============================
         # Tabel laporan
-        # ===============================
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID Transaksi", "Produk", "Harga", "Jumlah", "Subtotal"])
+        self.table.setColumnCount(4)  # Hanya 4 kolom setelah menghapus ID transaksi
+        self.table.setHorizontalHeaderLabels(["Produk", "Harga", "Jumlah", "Subtotal"])
+        
+        # Hapus header vertikal (nomor urut)
+        self.table.verticalHeader().setVisible(False)  # Menyembunyikan header vertikal
+
+        self.table.setStyleSheet("""
+            QTableWidget {
+                border: 1px solid #ddd;
+                font-size: 14px;
+            }
+            QTableWidget QHeaderView::section {
+                background-color: #34495e;
+                color: white;
+                padding: 10px;
+                font-weight: bold;
+            }
+            QTableWidget::item {
+                padding: 8px;
+            }
+            QTableWidget::item:selected {
+                background-color: #f39c12;
+                color: white;
+            }
+        """)
         layout.addWidget(self.table)
 
-        # Label total
+        # Label total penjualan
         self.total_label = QLabel("Total Penjualan: Rp0")
-        self.total_label.setStyleSheet("font-weight: bold; margin-top: 10px; font-size: 14px;")
+        self.total_label.setStyleSheet("""
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            color: #16a085;
+        """)
         layout.addWidget(self.total_label)
 
-        # Label pesan kosong (jika tidak ada data)
+        # Label pesan kosong
         self.empty_label = QLabel("")
-        self.empty_label.setStyleSheet("color: gray; font-style: italic; margin-top: 5px;")
+        self.empty_label.setStyleSheet("""
+            color: gray;
+            font-style: italic;
+            margin-top: 5px;
+        """)
         layout.addWidget(self.empty_label)
 
         self.setLayout(layout)
@@ -84,9 +160,6 @@ class ReportWindow(QWidget):
         # Tampilkan laporan default bulan ini
         self.load_report()
 
-    # ==================================================
-    # FUNGSI UTAMA: LOAD LAPORAN PER BULAN
-    # ==================================================
     def load_report(self):
         month_index = self.cmb_month.currentIndex() + 1
         year = int(self.cmb_year.currentText())
@@ -118,15 +191,12 @@ class ReportWindow(QWidget):
         # Jika ada data, isi tabel
         self.table.setRowCount(len(rows))
         for i, row in enumerate(rows):
-            for j, value in enumerate(row):
+            for j, value in enumerate(row[1:]):  # Mengambil mulai dari indeks ke-1 (produk)
                 self.table.setItem(i, j, QTableWidgetItem(str(value)))
             total_sales += row[4]
 
         self.total_label.setText(f"Total Penjualan: Rp{total_sales:,.0f}")
 
-    # ==================================================
-    # EXPORT CSV
-    # ==================================================
     def export_csv(self):
         month_index = self.cmb_month.currentIndex() + 1
         year = int(self.cmb_year.currentText())
@@ -161,14 +231,11 @@ class ReportWindow(QWidget):
 
         with open(filename, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["ID Transaksi", "Produk", "Harga", "Jumlah", "Subtotal"])
+            writer.writerow(["Produk", "Harga", "Jumlah", "Subtotal"])  # Header CSV tanpa ID
             for row in rows:
-                writer.writerow(row)
+                writer.writerow(row[1:])  # Menulis data tanpa ID
 
         QMessageBox.information(self, "Berhasil", f"Laporan disimpan ke:\n{filename}")
 
-    # ==================================================
-    # KEMBALI KE DASHBOARD
-    # ==================================================
     def go_back(self):
         self.main_window.show_dashboard()

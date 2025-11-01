@@ -110,13 +110,16 @@ class SalesWindow(QWidget):
 
         # ================== TABEL ==================
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Produk", "Harga", "Jumlah", "Total", "Aksi"])
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(["#","Produk", "Harga", "Jumlah", "Total", "Aksi"])
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet("alternate-background-color: #f9fafb;")
 
+        # Menyembunyikan nomor urut vertikal otomatis
+        self.table.verticalHeader().setVisible(False)  # Menyembunyikan header vertikal
+
         header = self.table.horizontalHeader()
-        for col in range(5):
+        for col in range(6):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self.table)
@@ -185,10 +188,11 @@ class SalesWindow(QWidget):
         # Memperbarui tabel dengan produk yang telah ditambahkan
         self.table.setRowCount(len(self.cart))
         for i, (_, name, price, qty, total) in enumerate(self.cart):
-            self.table.setItem(i, 0, QTableWidgetItem(name))
-            self.table.setItem(i, 1, QTableWidgetItem(f"Rp {price:,.0f}"))
-            self.table.setItem(i, 2, QTableWidgetItem(str(qty)))
-            self.table.setItem(i, 3, QTableWidgetItem(f"Rp {total:,.0f}"))
+            self.table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+            self.table.setItem(i, 1, QTableWidgetItem(name))
+            self.table.setItem(i, 2, QTableWidgetItem(f"Rp {price:,.0f}"))
+            self.table.setItem(i, 3, QTableWidgetItem(str(qty)))
+            self.table.setItem(i, 4, QTableWidgetItem(f"Rp {total:,.0f}"))
 
             btn_del = QPushButton("Hapus")
             btn_del.setProperty("row_index", i)
@@ -203,7 +207,7 @@ class SalesWindow(QWidget):
                 }
                 QPushButton:hover { background-color: #dc2626; }
             """)
-            self.table.setCellWidget(i, 4, btn_del)
+            self.table.setCellWidget(i, 5, btn_del)
 
     def handle_remove_by_button(self):
         # Menghapus produk dari keranjang transaksi
