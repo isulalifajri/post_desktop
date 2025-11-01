@@ -115,7 +115,7 @@ class ReportWindow(QWidget):
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Tanggal Pembelian", "Produk", "Harga", "Jumlah", "Subtotal"])
         self.table.verticalHeader().setVisible(False)
-        self.table.setWordWrap(True)  # 🟢 Aktifkan wrapping
+        self.table.setWordWrap(True)
         self.table.setStyleSheet("""
             QTableWidget {
                 border: 1px solid #ddd;
@@ -129,7 +129,7 @@ class ReportWindow(QWidget):
             }
             QTableWidget::item {
                 padding: 8px;
-                white-space: pre-wrap;  /* biar text bisa turun ke bawah */
+                white-space: pre-wrap;
             }
             QTableWidget::item:selected {
                 background-color: #f39c12;
@@ -138,9 +138,12 @@ class ReportWindow(QWidget):
         """)
         layout.addWidget(self.table)
 
-        # Atur ukuran kolom awal
-        self.table.setColumnWidth(0, 180)
-        self.table.horizontalHeader().setStretchLastSection(True)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
 
         # Label total
         self.total_label = QLabel("Total Penjualan: Rp0 | Total Barang Terjual: 0")
@@ -182,6 +185,11 @@ class ReportWindow(QWidget):
             except ValueError:
                 return tanggal_str  # fallback
 
+    # ======================= UTIL: Format Rupiah =======================
+    def format_rupiah(self, amount):
+        """Format angka menjadi Rp 12.000 tanpa desimal"""
+        return f"Rp {int(amount):,}".replace(",", ".")
+
     # ======================= LOAD REPORT =======================
     def load_report(self):
         month_index = self.cmb_month.currentIndex() + 1
@@ -213,7 +221,13 @@ class ReportWindow(QWidget):
         self.table.setRowCount(len(rows))
         for i, row in enumerate(rows):
             formatted_date = self.format_tanggal(row[0])
-            row_data = [formatted_date, row[1], row[2], row[3], row[4]]
+            row_data = [
+                formatted_date,
+                row[1],
+                self.format_rupiah(row[2]),  # Harga
+                row[3],
+                self.format_rupiah(row[4])   # Subtotal
+            ]
 
             for j, value in enumerate(row_data):
                 item = QTableWidgetItem(str(value))
@@ -223,8 +237,8 @@ class ReportWindow(QWidget):
             total_sales += row[4]
             total_qty += row[3]
 
-        self.table.resizeRowsToContents()  # 🟢 Biar wrapping terlihat
-        self.total_label.setText(f"Total Penjualan: Rp{total_sales:,.0f} | Total Barang Terjual: {total_qty}")
+        self.table.resizeRowsToContents()
+        self.total_label.setText(f"Total Penjualan: {self.format_rupiah(total_sales)} | Total Barang Terjual: {total_qty}")
 
     # ======================= EXPORT CSV =======================
     def export_csv(self):
@@ -265,13 +279,19 @@ class ReportWindow(QWidget):
             writer.writerow(["Tanggal Pembelian", "Produk", "Harga", "Jumlah", "Subtotal"])
             for row in rows:
                 formatted_date = self.format_tanggal(row[0])
-                row_data = [formatted_date, row[1], row[2], row[3], row[4]]
+                row_data = [
+                    formatted_date,
+                    row[1],
+                    self.format_rupiah(row[2]),
+                    row[3],
+                    self.format_rupiah(row[4])
+                ]
                 writer.writerow(row_data)
                 total_sales += row[4]
                 total_qty += row[3]
 
             writer.writerow([])
-            writer.writerow(["", "TOTAL", "", total_qty, total_sales])
+            writer.writerow(["", "TOTAL", "", total_qty, self.format_rupiah(total_sales)])
 
         QMessageBox.information(self, "Berhasil", f"Laporan disimpan ke:\n{filename}")
 
