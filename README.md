@@ -78,7 +78,8 @@ pip install mplcursors
 # untuk menampilkan data kedalam bentuk pdf
 
 ```
-pip install reportlab
+pip install fpdf -> di products
+pip install reportlab -> di sales tf
 
 ```
 

@@ -28,6 +28,36 @@ class ProductWindow(QWidget):
         """)
         layout.addWidget(title)
 
+        # ==========================================
+        # Tombol Export (di atas pencarian)
+        # ==========================================
+        export_layout = QHBoxLayout()
+        export_layout.addStretch()  # supaya tombol rata kanan
+
+        btn_export_csv = QPushButton("📄 Export CSV")
+        btn_export_csv.setStyleSheet("""
+            background-color: #f39c12;
+            color: white;
+            padding: 8px 14px;
+            font-weight: bold;
+            border-radius: 6px;
+        """)
+        btn_export_csv.clicked.connect(self.export_to_csv)
+
+        btn_export_pdf = QPushButton("🧾 Export PDF")
+        btn_export_pdf.setStyleSheet("""
+            background-color: #8e44ad;
+            color: white;
+            padding: 8px 14px;
+            font-weight: bold;
+            border-radius: 6px;
+        """)
+        btn_export_pdf.clicked.connect(self.export_to_pdf)
+
+        export_layout.addWidget(btn_export_csv)
+        export_layout.addWidget(btn_export_pdf)
+        layout.addLayout(export_layout)
+
         # Pencarian Produk Real-time
         search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
@@ -505,6 +535,111 @@ class ProductWindow(QWidget):
             success_box.exec()
 
             self.load_products()
+
+    # ==========================================
+    # EXPORT TO CSV DENGAN TANGGAL HARI INI
+    # ==========================================
+    def export_to_csv(self):
+        import csv
+        from datetime import datetime
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+
+        # Ambil tanggal hari ini
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        default_filename = f"daftar_product_{today_str}.csv"
+
+        # Pilih lokasi file (dengan nama default)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Simpan CSV", default_filename, "CSV Files (*.csv)"
+        )
+        if not file_path:
+            return
+
+        # Ambil data dari database
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, price, stock FROM products")
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Simpan ke CSV
+        try:
+            with open(file_path, "w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(["Nama Produk", "Harga (Rp)", "Stok"])
+                for name, price, stock in rows:
+                    price_str = f"{int(price):,}".replace(",", ".")  # format Indonesia
+                    writer.writerow([name, price_str, stock])
+
+            QMessageBox.information(self, "Sukses", f"Data produk berhasil diexport ke:\n{file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Gagal export CSV:\n{str(e)}")
+
+
+    # ==========================================
+    # EXPORT TO PDF
+    # ==========================================
+        # ==========================================
+    # EXPORT TO PDF DENGAN NAMA FILE & WAKTU CETAK
+    # ==========================================
+    def export_to_pdf(self):
+        from fpdf import FPDF
+        from datetime import datetime
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+
+        # Ambil tanggal & waktu sekarang
+        now = datetime.now()
+        today_str = now.strftime("%Y-%m-%d")
+        time_str = now.strftime("%H:%M:%S")
+        default_filename = f"daftar_product_{today_str}.pdf"
+
+        # Pilih lokasi file dengan nama default
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Simpan PDF", default_filename, "PDF Files (*.pdf)"
+        )
+        if not file_path:
+            return
+
+        # Ambil data dari database
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, price, stock FROM products")
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Buat file PDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 10, "Daftar Produk", ln=True, align="C")
+        pdf.ln(5)
+
+        # Tambahkan waktu cetak di bawah judul
+        pdf.set_font("Arial", "", 11)
+        pdf.cell(0, 8, f"Dicetak pada: {today_str} pukul {time_str}", ln=True, align="C")
+        pdf.ln(8)
+
+        # Header tabel
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(80, 10, "Nama Produk", 1, align="C")
+        pdf.cell(40, 10, "Harga", 1, align="C")
+        pdf.cell(30, 10, "Stok", 1, align="C")
+        pdf.ln()
+
+        # Isi tabel
+        pdf.set_font("Arial", "", 12)
+        for name, price, stock in rows:
+            pdf.cell(80, 10, name, 1)
+            pdf.cell(40, 10, f"Rp {int(price):,}".replace(",", "."), 1, align="R")
+            pdf.cell(30, 10, str(stock), 1, align="C")
+            pdf.ln()
+
+        # Simpan PDF
+        pdf.output(file_path)
+
+        QMessageBox.information(self, "Sukses", f"Data produk berhasil diexport ke:\n{file_path}")
+
+
 
     # ==========================================
     # KEMBALI KE MENU UTAMA
