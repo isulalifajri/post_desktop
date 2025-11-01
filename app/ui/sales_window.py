@@ -13,7 +13,7 @@ class SalesWindow(QWidget):
         self.cart = []
 
         # ================== GLOBAL STYLE ==================
-        self.setStyleSheet("""
+        self.setStyleSheet(""" 
             QWidget {
                 font-family: Segoe UI, Roboto, Arial;
                 font-size: 14px;
@@ -61,7 +61,7 @@ class SalesWindow(QWidget):
             }
 
             QComboBox {
-                width: 180px;
+                width: 200px;
             }
 
             QSpinBox {
@@ -89,36 +89,34 @@ class SalesWindow(QWidget):
             margin-bottom: 14px;
         """)
 
+        # Label and Input for Product & Quantity (in the same row)
+        layout.addWidget(QLabel("Pilih Produk dan Jumlah:"))
+
         # Horizontal Layout for Product and Quantity
         product_layout = QHBoxLayout()
         product_layout.setSpacing(10)
 
-        # Dropdown Produk
-        product_label = QLabel("Pilih Produk:")
+        # Dropdown Produk (ComboBox)
         self.cmb_product = QComboBox()
         self.cmb_product.setEditable(True)
         self.cmb_product.lineEdit().setReadOnly(True)
         self.cmb_product.lineEdit().setPlaceholderText("🔽 Pilih Produk...")
         self.load_products()
 
-        # Jumlah (Qty)
-        qty_label = QLabel("Jumlah:")
+        # Jumlah (Quantity - SpinBox)
         self.spin_qty = QSpinBox()
         self.spin_qty.setRange(1, 100)
         self.spin_qty.setValue(1)
-        self.spin_qty.setToolTip("Masukkan jumlah pembelian")
+        self.spin_qty.setToolTip("Masukkan jumlah pembelian")  # Tooltip for guidance
 
-        # Menambahkan elemen ke layout horizontal
-        product_layout.addWidget(product_label)
+        # Add both widgets (product combo and quantity spinner) to the horizontal layout
         product_layout.addWidget(self.cmb_product)
-        product_layout.addWidget(qty_label)
         product_layout.addWidget(self.spin_qty)
 
-        # Tombol tambah
+        # Tombol tambah (Add to transaction button)
         btn_add = QPushButton("➕ Tambah ke Transaksi")
         btn_add.clicked.connect(self.add_transaction)
-
-        card_layout.addLayout(product_layout)  # Menggunakan QHBoxLayout
+        card_layout.addLayout(product_layout)  # Add product layout
         card_layout.addWidget(btn_add)
 
         layout.addWidget(card)
@@ -131,7 +129,6 @@ class SalesWindow(QWidget):
         self.table.setStyleSheet("alternate-background-color: #f9fafb;")
 
         header = self.table.horizontalHeader()
-        # Semua stretch biar equal width
         for col in range(5):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
 
@@ -204,7 +201,6 @@ class SalesWindow(QWidget):
         btn = self.sender()
         row = btn.property("row_index")
 
-        # Langsung menghapus item tanpa konfirmasi
         del self.cart[row]
         self.update_table()
 
