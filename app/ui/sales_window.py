@@ -163,8 +163,23 @@ class SalesWindow(QWidget):
 
         qty = self.spin_qty.value()
         total = product[2] * qty
-        self.cart.append((product[0], product[1], product[2], qty, total))
+
+        # Check if the product already exists in the cart
+        product_exists = False
+        for i, (pid, name, price, existing_qty, _) in enumerate(self.cart):
+            if pid == product[0]:  # Compare by product ID
+                # Update the quantity and total for the existing product in the cart
+                self.cart[i] = (pid, name, price, existing_qty + qty, price * (existing_qty + qty))
+                product_exists = True
+                break
+
+        # If product does not exist, add a new product entry to the cart
+        if not product_exists:
+            self.cart.append((product[0], product[1], product[2], qty, total))
+
+        # Update the table after adding or updating the product
         self.update_table()
+
 
     def update_table(self):
         # Memperbarui tabel dengan produk yang telah ditambahkan
