@@ -18,8 +18,14 @@ class ProductWindow(QWidget):
 
         # Judul
         title = QLabel("🧾 Daftar Produk")
-        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #2c3e50;")
-        layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("""
+            font-size: 22px;
+            font-weight: bold;
+            color: #2C3E50;
+            margin-bottom: 10px;
+            text-align: center;
+        """)
+        layout.addWidget(title)
 
         # ------------------------
         # Pencarian Produk Real-time
@@ -56,6 +62,10 @@ class ProductWindow(QWidget):
             }
             QTableWidget::item:alternate {
                 background-color: #ecf0f1; 
+            }
+            QTableWidget::item:selected {
+                background-color: #2980b9;  /* biru pilihan */
+                color: white;               /* teks putih saat dipilih */
             }
             QTableWidget::item {
                 background-color: #ffffff; 
