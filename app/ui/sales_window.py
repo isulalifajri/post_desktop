@@ -81,7 +81,12 @@ class SalesWindow(QWidget):
         """)
 
         # Label dan Input untuk Produk & Jumlah (dalam baris yang sama)
-        layout.addWidget(QLabel("Pilih Produk dan Qty:"))
+        label = QLabel("Pilih Produk dan Qty:")
+        label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+        """)
+        layout.addWidget(label)
 
         # Layout Horizontal untuk Produk dan Jumlah
         hbox_filter = QHBoxLayout()
